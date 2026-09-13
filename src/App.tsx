@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from "react";
+import JSZip from "jszip";
 import { BOT_FILES } from "./botFilesData";
 import { TelemetryData } from "./types";
 import { Header } from "./components/Header";
+import { WispbyteGuide } from "./components/WispbyteGuide";
 import { CodeExplorer } from "./components/CodeExplorer";
 import { ModerationSimulator } from "./components/ModerationSimulator";
 import { SlashCommandSandbox } from "./components/SlashCommandSandbox";
 import { TermuxGuide } from "./components/TermuxGuide";
 import { HealthWatchdog } from "./components/HealthWatchdog";
-import { Shield, Sparkles, Terminal, Smartphone } from "lucide-react";
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<string>("code");
+  const [activeTab, setActiveTab] = useState<string>("wispbyte");
   const [telemetry, setTelemetry] = useState<TelemetryData | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadSuccess, setDownloadSuccess] = useState(false);
@@ -34,7 +35,7 @@ export default function App() {
           externalMB: 2.1,
         },
         nodeVersion: "v22.14.0",
-        platform: "linux (termux)",
+        platform: "linux (pterodactyl/wispbyte)",
         geminiConfigured: true,
       });
     }
@@ -46,48 +47,21 @@ export default function App() {
     return () => clearInterval(interval);
   }, []);
 
-  // Generates an automated shell script that sets up the entire bot in Termux with 1 command!
-  const handleDownloadAll = () => {
+  // Generates a complete .zip bundle ready to upload to Wispbyte or extract on local machine
+  const handleDownloadAll = async () => {
     setIsDownloading(true);
 
     try {
-      // Build a self-extracting bash setup script
-      let scriptContent = `#!/usr/bin/env bash
-# ==============================================================================
-# DISCORD SENTINEL AI - TERMUX 1-CLICK DEPLOYMENT SCRIPT
-# ==============================================================================
-set -e
-
-echo "🤖 Setting up Discord Sentinel AI Bot in ~/discord-bot..."
-mkdir -p ~/discord-bot/src/commands
-mkdir -p ~/discord-bot/src/events
-mkdir -p ~/discord-bot/src/utils
-cd ~/discord-bot
-
-`;
-
+      const zip = new JSZip();
       BOT_FILES.forEach((file) => {
-        // Safe heredoc write
-        scriptContent += `cat << 'EOF' > ~/discord-bot/${file.path}\n${file.content}\nEOF\n\n`;
+        zip.file(file.path, file.content);
       });
 
-      scriptContent += `
-echo "📦 Installing npm dependencies..."
-npm install
-
-echo "✅ All bot files successfully deployed to ~/discord-bot!"
-echo "👉 Next steps:"
-echo "   1. cd ~/discord-bot"
-echo "   2. nano .env  (add your DISCORD_TOKEN and GEMINI_API_KEY)"
-echo "   3. npm run deploy-commands"
-echo "   4. npm run build && npm start"
-`;
-
-      const blob = new Blob([scriptContent], { type: "text/x-sh" });
+      const blob = await zip.generateAsync({ type: "blob" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "setup-discord-bot.sh";
+      a.download = "discord-sentinel-wispbyte.zip";
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -96,7 +70,7 @@ echo "   4. npm run build && npm start"
       setDownloadSuccess(true);
       setTimeout(() => setDownloadSuccess(false), 3000);
     } catch (err) {
-      console.error("Download failed:", err);
+      console.error("Zip bundle download failed:", err);
     } finally {
       setIsDownloading(false);
     }
@@ -114,9 +88,10 @@ echo "   4. npm run build && npm start"
       />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {activeTab === "code" && <CodeExplorer files={BOT_FILES} />}
+        {activeTab === "wispbyte" && <WispbyteGuide />}
         {activeTab === "simulator" && <ModerationSimulator />}
         {activeTab === "commands" && <SlashCommandSandbox />}
+        {activeTab === "code" && <CodeExplorer files={BOT_FILES} />}
         {activeTab === "termux" && <TermuxGuide />}
         {activeTab === "health" && (
           <HealthWatchdog
@@ -134,12 +109,12 @@ echo "   4. npm run build && npm start"
             <span>•</span>
             <span>Discord.js v14 + Google Gen AI SDK (@google/genai)</span>
             <span>•</span>
-            <span>Termux Low-RAM Architecture</span>
+            <span className="text-teal-700 font-medium">Wispbyte &amp; Pterodactyl Container Ready</span>
           </div>
           <div className="flex items-center space-x-4">
-            <span>Memory Target: &lt; 85 MB RSS</span>
-            <span>Worker Queue Concurrency: 2</span>
-            <span>Layer 1 Latency: &lt; 0.2ms</span>
+            <span>Memory Target: &lt; 80 MB RSS</span>
+            <span>Worker Queue: Concurrency 2</span>
+            <span>Execution Mode: Pure CLI Gateway</span>
           </div>
         </div>
       </footer>

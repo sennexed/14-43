@@ -1,5 +1,5 @@
 import React from "react";
-import { Shield, Smartphone, Cpu, Download, Check, Sparkles, Terminal } from "lucide-react";
+import { Shield, Smartphone, Cpu, Download, Check, Sparkles, Terminal, Server } from "lucide-react";
 import { TelemetryData } from "../types";
 
 interface HeaderProps {
@@ -34,12 +34,15 @@ export const Header: React.FC<HeaderProps> = ({
                 <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
                   Discord.js v14
                 </span>
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-teal-50 text-teal-700 border border-teal-200">
+                  Wispbyte 100% Ready
+                </span>
+                <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">
                   Termux Ready
                 </span>
               </div>
               <p className="text-xs text-zinc-500 mt-0.5">
-                Hybrid AI + Command Moderation Bot • Decoupled Gemini 2.5 Flash Queue • Low-RAM Android Engine
+                Hybrid AI + Command Moderation Bot • Decoupled Gemini 2.5 Flash Queue • Wispbyte &amp; Mobile Low-RAM Architecture
               </p>
             </div>
           </div>
@@ -55,13 +58,13 @@ export const Header: React.FC<HeaderProps> = ({
                 </div>
                 <div className="h-3 w-px bg-zinc-200" />
                 <div className="flex items-center space-x-1.5 text-zinc-600">
-                  <Smartphone className="w-3.5 h-3.5 text-emerald-600" />
+                  <Server className="w-3.5 h-3.5 text-teal-600" />
                   <span>Node: <strong>{telemetry.nodeVersion}</strong></span>
                 </div>
                 <div className="h-3 w-px bg-zinc-200" />
                 <div className="flex items-center space-x-1.5">
                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  <span className="text-zinc-700 font-medium">Engine Active</span>
+                  <span className="text-zinc-700 font-medium">Gateway Active</span>
                 </div>
               </div>
             )}
@@ -69,7 +72,7 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               onClick={onDownloadAll}
               disabled={isDownloading}
-              className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold transition-colors shadow-xs"
+              className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold transition-colors shadow-xs cursor-pointer"
             >
               {downloadSuccess ? (
                 <>
@@ -89,9 +92,10 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Tab Navigation */}
         <div className="flex space-x-1 border-t border-zinc-100 overflow-x-auto py-2 scrollbar-none">
           {[
-            { id: "code", label: "File Explorer & Codebase", icon: Terminal, count: "14 Files" },
+            { id: "wispbyte", label: "Wispbyte Cloud Deploy", icon: Server, badge: "Pterodactyl", highlight: true },
             { id: "simulator", label: "Live Moderation Matrix", icon: Sparkles, badge: "Interactive" },
             { id: "commands", label: "Slash Commands Sandbox", icon: Shield },
+            { id: "code", label: "File Explorer & Codebase", icon: Terminal, count: "14 Files" },
             { id: "termux", label: "Termux Android Guide", icon: Smartphone },
             { id: "health", label: "10-Min Status Watchdog", icon: Cpu },
           ].map((tab) => {
@@ -101,7 +105,7 @@ export const Header: React.FC<HeaderProps> = ({
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center space-x-2 px-3.5 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-all ${
+                className={`flex items-center space-x-2 px-3.5 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-all cursor-pointer ${
                   isActive
                     ? "bg-indigo-50 text-indigo-700 font-semibold shadow-xs"
                     : "text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100/70"
@@ -115,7 +119,11 @@ export const Header: React.FC<HeaderProps> = ({
                   </span>
                 )}
                 {tab.badge && (
-                  <span className="text-[10px] bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded-md font-medium">
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-semibold ${
+                    tab.highlight 
+                      ? "bg-emerald-100 text-emerald-800 border border-emerald-200" 
+                      : "bg-indigo-100 text-indigo-700"
+                  }`}>
                     {tab.badge}
                   </span>
                 )}
