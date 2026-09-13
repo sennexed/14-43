@@ -1,0 +1,6 @@
+{
+  "name": "Discord AI Moderation Bot",
+  "description": "Production-ready Discord.js v14 hybrid AI moderation bot optimized for Termux with decoupled Gemini background queues and dual-layer moderation matrix.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
