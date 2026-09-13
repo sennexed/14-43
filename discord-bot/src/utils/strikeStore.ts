@@ -46,6 +46,9 @@ class StrikeStore {
     reason: string,
     layer: "LAYER_1_REGEX" | "LAYER_2_GEMINI" | "MANUAL_STAFF"
   ): { record: StrikeRecord; thresholdReached: boolean } {
+    if (!this.strikes) {
+      this.strikes = new Map();
+    }
     const key = this.getKey(guildId, userId);
     const now = Date.now();
     let record = this.strikes.get(key);
@@ -78,6 +81,7 @@ class StrikeStore {
    * Retrieves current strike count for a user in a guild.
    */
   public getStrikes(guildId: string, userId: string): StrikeRecord | null {
+    if (!this.strikes || !guildId || !userId) return null;
     const key = this.getKey(guildId, userId);
     const record = this.strikes.get(key);
     if (!record) return null;

@@ -9,21 +9,57 @@ export interface BotFile {
 
 export const BOT_FILES: BotFile[] = [
   {
+    path: ".gitignore",
+    name: ".gitignore",
+    description: "Git ignore configuration excluding node_modules, compiled dist, and private .env tokens.",
+    category: "config",
+    language: "bash",
+    content: `# Node.js dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# TypeScript compiler output
+dist/
+build/
+
+# Environment variables & bot secrets (NEVER commit to GitHub)
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# OS & Editor generated files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.vscode/
+.idea/
+
+# Container logs & temporary runtime files
+*.log
+logs/
+.npm`
+  },
+  {
     path: "package.json",
     name: "package.json",
-    description: "Project metadata, dependencies (discord.js, @google/genai, dotenv), and Termux low-memory start script.",
+    description: "Project metadata, dependencies (discord.js, @google/genai, dotenv), and Wispbyte / Pterodactyl direct node dist/index.js start script.",
     category: "config",
     language: "json",
     content: `{
   "name": "discord-ai-moderator",
   "version": "1.0.0",
-  "description": "Mobile-optimized hybrid AI and command moderation Discord bot for Termux",
+  "description": "Container-optimized hybrid AI and command moderation Discord bot for Wispbyte and Termux",
   "main": "dist/index.js",
   "type": "module",
   "scripts": {
     "dev": "tsx src/index.ts",
     "build": "tsc",
-    "start": "node --max-old-space-size=128 dist/index.js",
+    "start": "node dist/index.js",
     "deploy-commands": "tsx src/deploy-commands.ts",
     "typecheck": "tsc --noEmit"
   },
@@ -31,7 +67,8 @@ export const BOT_FILES: BotFile[] = [
     "discord",
     "moderation",
     "gemini",
-    "termux",
+    "wispbyte",
+    "pterodactyl",
     "ai",
     "discord-js"
   ],
@@ -135,6 +172,7 @@ dotenv.config();
 import { handleMessageCreate } from "./events/messageCreate.js";
 import { handleInteractionCreate } from "./events/interactionCreate.js";
 import { startStatusLogger } from "./utils/statusLogger.js";
+import { strikeStore } from "./utils/strikeStore.js";
 
 import * as timeoutCommand from "./commands/timeout.js";
 import * as banCommand from "./commands/ban.js";
@@ -183,15 +221,35 @@ client.once("ready", (c) => {
   console.log(\`🤖 Discord Sentinel AI Bot is ONLINE!\`);
   console.log(\`🏷️ Logged in as:      \${c.user.tag} (ID: \${c.user.id})\`);
   console.log(\`🌐 Serving Guilds:    \${c.guilds.cache.size}\`);
-  console.log(\`📱 Runtime Target:    Mobile / Termux (Low-Memory Optimized)\`);
+  console.log(\`🚀 Runtime Target:    Wispbyte (Pterodactyl Node.js Container)\`);
   console.log(\`🧠 AI Engine:         Google Gen AI SDK (@google/genai)\`);
+  console.log(\`⚡ Execution Mode:    Pure Background CLI Gateway (No Web Ports)\`);
   console.log("=======================================================\\n");
 
   startStatusLogger(c);
 });
 
+// Primary Message Gateway: Handles Layer 1 (instant) & dispatches Layer 2 (queue)
+// Wrapped with container reboot validation to prevent null reference errors on fresh memory
 client.on("messageCreate", async (message) => {
   try {
+    // Guard against malformed gateway payloads or empty events
+    if (!message || !message.author || !message.guild) return;
+
+    // CONTAINER RESTART DEFENSE & MEMORY VALIDATION:
+    // If the Wispbyte container restarts and wipes the in-memory map,
+    // ensure strikeStore and cache lookups are resilient so incoming chat messages never throw null errors.
+    try {
+      if (strikeStore && typeof strikeStore.getStrikes === "function") {
+        strikeStore.getStrikes(message.guild.id, message.author.id);
+      }
+    } catch (storeValidationErr: any) {
+      console.warn(
+        "⚠️ [Memory Defense] Strike store map re-initialized after container restart:",
+        storeValidationErr?.message || storeValidationErr
+      );
+    }
+
     await handleMessageCreate(message);
   } catch (err: any) {
     console.error("[Gateway Error] Unhandled error in messageCreate handler:", err?.message || err);
@@ -498,6 +556,7 @@ class StrikeStore {
     reason: string,
     layer: "LAYER_1_REGEX" | "LAYER_2_GEMINI" | "MANUAL_STAFF"
   ): { record: StrikeRecord; thresholdReached: boolean } {
+    if (!this.strikes) this.strikes = new Map();
     const key = this.getKey(guildId, userId);
     const now = Date.now();
     let record = this.strikes.get(key);
@@ -523,6 +582,7 @@ class StrikeStore {
   }
 
   public getStrikes(guildId: string, userId: string): StrikeRecord | null {
+    if (!this.strikes || !guildId || !userId) return null;
     const key = this.getKey(guildId, userId);
     const record = this.strikes.get(key);
     if (!record) return null;

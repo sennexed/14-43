@@ -15,6 +15,7 @@ dotenv.config();
 import { handleMessageCreate } from "./events/messageCreate.js";
 import { handleInteractionCreate } from "./events/interactionCreate.js";
 import { startStatusLogger } from "./utils/statusLogger.js";
+import { strikeStore } from "./utils/strikeStore.js";
 
 // Commands
 import * as timeoutCommand from "./commands/timeout.js";
@@ -74,8 +75,9 @@ client.once("ready", (c) => {
   console.log(`🤖 Discord Sentinel AI Bot is ONLINE!`);
   console.log(`🏷️ Logged in as:      ${c.user.tag} (ID: ${c.user.id})`);
   console.log(`🌐 Serving Guilds:    ${c.guilds.cache.size}`);
-  console.log(`📱 Runtime Target:    Mobile / Termux (Low-Memory Optimized)`);
+  console.log(`🚀 Runtime Target:    Wispbyte (Pterodactyl Node.js Container)`);
   console.log(`🧠 AI Engine:         Google Gen AI SDK (@google/genai)`);
+  console.log(`⚡ Execution Mode:    Pure Background CLI Gateway (No Web Ports)`);
   console.log("=======================================================\n");
 
   // Start the 10-minute telemetric health monitor & status updater
@@ -83,8 +85,26 @@ client.once("ready", (c) => {
 });
 
 // Primary Message Gateway: Handles Layer 1 (instant) & dispatches Layer 2 (queue)
+// Wrapped with container reboot validation to prevent null reference errors on fresh memory
 client.on("messageCreate", async (message) => {
   try {
+    // Guard against malformed gateway payloads or empty events
+    if (!message || !message.author || !message.guild) return;
+
+    // CONTAINER RESTART DEFENSE & MEMORY VALIDATION:
+    // If the Wispbyte container restarts and wipes the in-memory map,
+    // ensure strikeStore and cache lookups are resilient so incoming chat messages never throw null errors.
+    try {
+      if (strikeStore && typeof strikeStore.getStrikes === "function") {
+        strikeStore.getStrikes(message.guild.id, message.author.id);
+      }
+    } catch (storeValidationErr: any) {
+      console.warn(
+        "⚠️ [Memory Defense] Strike store map re-initialized after container restart:",
+        storeValidationErr?.message || storeValidationErr
+      );
+    }
+
     await handleMessageCreate(message);
   } catch (err: any) {
     console.error("[Gateway Error] Unhandled error in messageCreate handler:", err?.message || err);
